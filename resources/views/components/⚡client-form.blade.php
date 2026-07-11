@@ -39,9 +39,11 @@ new class extends Component
 
         if ($this->client && $this->client->exists) {
             $this->client->update($validated);
+            \App\Models\ActivityLog::log('updated', $this->client, "Updated Client {$this->client->name}");
             session()->flash('message', 'Client updated successfully.');
         } else {
-            Client::create($validated);
+            $client = Client::create($validated);
+            \App\Models\ActivityLog::log('created', $client, "Created Client {$client->name}");
             session()->flash('message', 'Client created successfully.');
         }
 

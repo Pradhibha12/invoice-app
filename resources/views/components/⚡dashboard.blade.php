@@ -34,6 +34,30 @@ new class extends Component
             ->limit(5)
             ->get();
     }
+
+    public function getChartData()
+    {
+        $labels = [];
+        $data = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $labels[] = $date->format('M Y');
+
+            $start = $date->copy()->startOfMonth()->format('Y-m-d');
+            $end = $date->copy()->endOfMonth()->format('Y-m-d');
+
+            $revenue = \App\Models\InvoicePayment::whereBetween('paid_on', [$start, $end])
+                ->sum('amount');
+
+            $data[] = floatval($revenue);
+        }
+
+        return [
+            'labels' => $labels,
+            'data' => $data,
+        ];
+    }
 };
 ?>
 
@@ -83,6 +107,68 @@ new class extends Component
                 <span class="text-sm font-semibold text-stone-500 uppercase tracking-wider block">Overdue Invoices</span>
                 <span class="text-3xl font-extrabold text-stone-900 font-display">{{ $stats['overdue_count'] }}</span>
             </div>
+        </div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Revenue Chart Section -->
+    <div x-data="{
+        labels: @js($this->getChartData()['labels']),
+        data: @js($this->getChartData()['data']),
+        init() {
+            const ctx = this.$refs.canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: this.labels,
+                    datasets: [{
+                        label: 'Revenue (INR)',
+                        data: this.data,
+                        backgroundColor: '#d97706',
+                        borderRadius: 6,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#e5e7eb'
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Instrument Sans, sans-serif'
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Instrument Sans, sans-serif'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }" class="bg-white rounded-xl border border-stone-200 p-6 shadow-sm">
+        <h2 class="text-lg font-bold text-stone-950 font-display mb-4">Revenue Trend (Last 6 Months)</h2>
+        <div class="h-64 relative">
+            <canvas x-ref="canvas"></canvas>
         </div>
     </div>
 

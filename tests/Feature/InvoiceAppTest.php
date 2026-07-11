@@ -306,4 +306,51 @@ class InvoiceAppTest extends TestCase
         $pdfResponse->assertStatus(200);
         $pdfResponse->assertHeader('content-type', 'application/pdf');
     }
+
+    public function test_public_invoice_view_accessible_without_login(): void
+    {
+        auth()->logout();
+
+        $client = Client::create([
+            'name' => 'Jane Public',
+            'email' => 'jane@example.com',
+        ]);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'invoice_number' => 'INV-PUB-10',
+            'issue_date' => '2026-07-10',
+            'due_date' => '2026-08-10',
+            'status' => 'draft',
+            'total' => 125.50,
+        ]);
+
+        // UUID token is automatically generated on create
+        $this->assertNotEmpty($invoice->token);
+
+        $response = $this->get("/invoice/view/{$invoice->token}");
+        $response->assertStatus(200);
+        $response->assertSee('INV-PUB-10');
+        $response->assertSee('Jane Public');
+        $response->assertSee('₹125.50');
+        $response->assertDontSee('Record Payment');
+        $response->assertDontSee('Edit Invoice');
+    }
+
+    public function test_actions_are_logged_to_activity_logs(): void
+    {
+        $this->assertDatabaseCount('activity_logs', 0);
+
+        // 1. Create client action
+        Livewire::test('client-form')
+            ->set('name', 'Logger Client')
+            ->set('email', 'logger@example.com')
+            ->call('save');
+
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'created',
+            'subject_type' => 'Client',
+            'description' => 'Created Client Logger Client',
+        ]);
+    }
 }

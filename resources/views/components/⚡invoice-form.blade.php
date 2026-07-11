@@ -148,8 +148,10 @@ new class extends Component
             if ($this->invoice && $this->invoice->exists) {
                 $this->invoice->update($invoiceData);
                 $invoice = $this->invoice;
+                \App\Models\ActivityLog::log('updated', $invoice, "Updated Invoice {$invoice->invoice_number}");
             } else {
                 $invoice = Invoice::create($invoiceData);
+                \App\Models\ActivityLog::log('created', $invoice, "Created Invoice {$invoice->invoice_number}");
             }
 
             // Sync items

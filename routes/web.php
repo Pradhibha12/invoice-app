@@ -2,12 +2,17 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::livewire('/login', 'login')->name('login')->middleware('guest');
-Route::livewire('/register', 'register')->name('register')->middleware('guest');
+Route::middleware('throttle:5,1')->group(function () {
+    Route::livewire('/login', 'login')->name('login')->middleware('guest');
+    Route::livewire('/register', 'register')->name('register')->middleware('guest');
+});
+
+Route::livewire('/invoice/view/{token}', 'invoice-public')->name('invoices.public');
 
 Route::middleware('auth')->group(function () {
     Route::livewire('/', 'dashboard')->name('dashboard');
     Route::livewire('/settings', 'settings-form')->name('settings.edit');
+    Route::livewire('/activity', 'activity-feed')->name('activity.index');
 
     Route::livewire('/clients', 'client-index')->name('clients.index');
     Route::livewire('/clients/create', 'client-form')->name('clients.create');

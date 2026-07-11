@@ -69,6 +69,12 @@ new class extends Component
 
         $this->invoice->updatePaymentStatus();
 
+        if ($this->invoice->status === 'paid') {
+            \App\Models\ActivityLog::log('paid', $this->invoice, "Invoice {$this->invoice->invoice_number} marked as Paid");
+        } else {
+            \App\Models\ActivityLog::log('partially_paid', $this->invoice, "Invoice {$this->invoice->invoice_number} marked as Partially Paid");
+        }
+
         // Save default payment mode on invoice if none exists
         if (!$this->invoice->payment_mode) {
             $this->invoice->update(['payment_mode' => $this->paymentMode]);
@@ -124,6 +130,9 @@ new class extends Component
             <a href="{{ route('invoices.edit', $invoice) }}" class="px-4 py-2 border border-stone-300 hover:bg-stone-50 text-stone-700 rounded-lg text-sm font-semibold transition">
                 Edit Invoice
             </a>
+            <button onclick="navigator.clipboard.writeText('{{ route('invoices.public', $invoice->token) }}'); alert('Shareable link copied to clipboard!');" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg text-sm font-bold shadow-sm transition cursor-pointer">
+                Share Link
+            </button>
             <a href="{{ route('invoices.print', $invoice) }}" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-stone-950 rounded-lg text-sm font-bold shadow-sm transition">
                 Print / View PDF
             </a>

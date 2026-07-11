@@ -9,7 +9,12 @@ new class extends Component
 
     public function delete(int $id)
     {
-        Client::destroy($id);
+        $client = Client::find($id);
+        if ($client) {
+            $name = $client->name;
+            $client->delete();
+            \App\Models\ActivityLog::log('deleted', null, "Deleted Client {$name}");
+        }
         session()->flash('message', 'Client deleted successfully.');
     }
 

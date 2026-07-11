@@ -9,7 +9,12 @@ new class extends Component
 
     public function delete(int $id)
     {
-        Invoice::destroy($id);
+        $invoice = Invoice::find($id);
+        if ($invoice) {
+            $num = $invoice->invoice_number;
+            $invoice->delete();
+            \App\Models\ActivityLog::log('deleted', null, "Deleted Invoice {$num}");
+        }
         session()->flash('message', 'Invoice deleted successfully.');
     }
 
@@ -23,15 +28,67 @@ new class extends Component
 
         return $query->get();
     }
+
+    public function exportCsv()
+    {
+        $invoices = $this->invoices();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="invoices_' . date('Y-m-d') . '.csv"',
+        ];
+
+        $callback = function () use ($invoices) {
+            $file = fopen('php://output', 'w');
+            fputs($file, "\xEF\xBB\xBF");
+
+            fputcsv($file, [
+                'Invoice Number',
+                'Client Name',
+                'Client Email',
+                'Issue Date',
+                'Due Date',
+                'Status',
+                'Total (INR)',
+                'Amount Paid (INR)',
+                'Balance (INR)',
+                'Payment Mode'
+            ]);
+
+            foreach ($invoices as $invoice) {
+                fputcsv($file, [
+                    $invoice->invoice_number,
+                    $invoice->client->name,
+                    $invoice->client->email,
+                    $invoice->issue_date,
+                    $invoice->due_date,
+                    ucfirst($invoice->status),
+                    $invoice->total,
+                    $invoice->amount_paid,
+                    round($invoice->total - $invoice->amount_paid, 2),
+                    $invoice->payment_mode ?: '—'
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->streamDownload($callback, 'invoices_' . date('Y-m-d') . '.csv', $headers);
+    }
 };
 ?>
 
 <div class="space-y-6">
     <div class="flex justify-between items-center">
         <h1 class="text-3xl font-extrabold text-stone-950 font-display tracking-tight">Invoices</h1>
-        <a href="{{ route('invoices.create') }}" class="inline-flex items-center px-4 py-2.5 bg-amber-600 text-stone-950 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-amber-700 active:bg-amber-800 shadow-sm hover:shadow transition duration-150">
-            Create Invoice
-        </a>
+        <div class="flex space-x-3">
+            <button wire:click="exportCsv" class="inline-flex items-center px-4 py-2.5 bg-stone-200 text-stone-800 hover:bg-stone-300 rounded-xl font-bold text-xs uppercase tracking-widest active:bg-stone-400 shadow-sm hover:shadow transition duration-150 cursor-pointer">
+                Export CSV
+            </button>
+            <a href="{{ route('invoices.create') }}" class="inline-flex items-center px-4 py-2.5 bg-amber-600 text-stone-950 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-amber-700 active:bg-amber-800 shadow-sm hover:shadow transition duration-150">
+                Create Invoice
+            </a>
+        </div>
     </div>
 
     @if (session()->has('message'))

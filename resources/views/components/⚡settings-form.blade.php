@@ -58,6 +58,8 @@ new class extends Component
 
         $settings->save();
 
+        \App\Models\ActivityLog::log('updated', $settings, "Updated Company Settings for {$this->company_name}");
+
         session()->flash('message', 'Company settings saved successfully.');
     }
 };

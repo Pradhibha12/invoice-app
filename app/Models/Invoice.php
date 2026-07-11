@@ -19,7 +19,15 @@ class Invoice extends Model
         'paid_date',
         'amount_paid',
         'payment_mode',
+        'token',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($invoice) {
+            $invoice->token = (string) \Illuminate\Support\Str::uuid();
+        });
+    }
 
     public function client()
     {
