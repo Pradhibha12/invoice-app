@@ -13,6 +13,22 @@ class InvoiceAppTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = \App\Models\User::factory()->create();
+        $this->actingAs($this->user);
+    }
+
+    public function test_guests_are_redirected_to_login(): void
+    {
+        auth()->logout();
+        $response = $this->get('/');
+        $response->assertRedirect(route('login'));
+    }
+
     public function test_homepage_renders_dashboard(): void
     {
         $response = $this->get('/');
