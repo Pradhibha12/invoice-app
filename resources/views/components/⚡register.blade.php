@@ -22,10 +22,16 @@ new class extends Component
     {
         $this->validate();
 
+        $client = \App\Models\Client::where('email', $this->email)->first();
+        $role = $client ? 'client' : 'user';
+        $clientId = $client ? $client->id : null;
+
         $user = User::create([
             'name' => $this->name,
             'email' => $this->email,
             'password' => Hash::make($this->password),
+            'role' => $role,
+            'client_id' => $clientId,
         ]);
 
         Auth::login($user);

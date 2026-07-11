@@ -20,7 +20,12 @@ new class extends Component
 
     public function invoices()
     {
+        $user = auth()->user();
         $query = Invoice::with('client')->latest();
+
+        if ($user->role === 'client') {
+            $query->where('client_id', $user->client_id);
+        }
 
         if ($this->statusFilter !== '') {
             $query->where('status', $this->statusFilter);
@@ -81,6 +86,7 @@ new class extends Component
 <div class="space-y-6">
     <div class="flex justify-between items-center">
         <h1 class="text-3xl font-extrabold text-stone-950 font-display tracking-tight">Invoices</h1>
+        @if(auth()->user()->role !== 'client')
         <div class="flex space-x-3">
             <button wire:click="exportCsv" class="inline-flex items-center px-4 py-2.5 bg-stone-200 text-stone-800 hover:bg-stone-300 rounded-xl font-bold text-xs uppercase tracking-widest active:bg-stone-400 shadow-sm hover:shadow transition duration-150 cursor-pointer">
                 Export CSV
@@ -89,6 +95,7 @@ new class extends Component
                 Create Invoice
             </a>
         </div>
+        @endif
     </div>
 
     @if (session()->has('message'))
@@ -169,8 +176,10 @@ new class extends Component
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold space-x-3">
                                 <a href="{{ route('invoices.show', $invoice) }}" class="text-stone-600 hover:text-stone-950">View</a>
-                                <a href="{{ route('invoices.edit', $invoice) }}" class="text-teal-700 hover:text-teal-900">Edit</a>
-                                <button wire:click="delete({{ $invoice->id }})" wire:confirm="Are you sure you want to delete this invoice?" class="text-rose-600 hover:text-rose-800 bg-none border-none p-0 cursor-pointer">Delete</button>
+                                @if(auth()->user()->role !== 'client')
+                                    <a href="{{ route('invoices.edit', $invoice) }}" class="text-teal-700 hover:text-teal-900">Edit</a>
+                                    <button wire:click="delete({{ $invoice->id }})" wire:confirm="Are you sure you want to delete this invoice?" class="text-rose-600 hover:text-rose-800 bg-none border-none p-0 cursor-pointer">Delete</button>
+                                @endif
                             </td>
                         </tr>
                     @empty

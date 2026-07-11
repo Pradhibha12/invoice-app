@@ -122,17 +122,19 @@ new class extends Component
         <a href="{{ route('invoices.index') }}" class="text-sm font-semibold text-teal-700 hover:text-teal-900">&larr; Back to List</a>
         
         <div class="flex items-center space-x-3">
-            @if ($invoice->status !== 'paid')
-                <button wire:click="togglePaymentForm" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-sm transition">
-                    {{ $showPaymentForm ? 'Cancel Payment' : 'Record Payment' }}
+            @if(auth()->user()->role !== 'client')
+                @if ($invoice->status !== 'paid')
+                    <button wire:click="togglePaymentForm" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-sm transition">
+                        {{ $showPaymentForm ? 'Cancel Payment' : 'Record Payment' }}
+                    </button>
+                @endif
+                <a href="{{ route('invoices.edit', $invoice) }}" class="px-4 py-2 border border-stone-300 hover:bg-stone-50 text-stone-700 rounded-lg text-sm font-semibold transition">
+                    Edit Invoice
+                </a>
+                <button onclick="navigator.clipboard.writeText('{{ route('invoices.public', $invoice->token) }}'); alert('Shareable link copied to clipboard!');" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg text-sm font-bold shadow-sm transition cursor-pointer">
+                    Share Link
                 </button>
             @endif
-            <a href="{{ route('invoices.edit', $invoice) }}" class="px-4 py-2 border border-stone-300 hover:bg-stone-50 text-stone-700 rounded-lg text-sm font-semibold transition">
-                Edit Invoice
-            </a>
-            <button onclick="navigator.clipboard.writeText('{{ route('invoices.public', $invoice->token) }}'); alert('Shareable link copied to clipboard!');" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg text-sm font-bold shadow-sm transition cursor-pointer">
-                Share Link
-            </button>
             <a href="{{ route('invoices.print', $invoice) }}" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-stone-950 rounded-lg text-sm font-bold shadow-sm transition">
                 Print / View PDF
             </a>

@@ -353,4 +353,92 @@ class InvoiceAppTest extends TestCase
             'description' => 'Created Client Logger Client',
         ]);
     }
+
+    public function test_client_role_auto_linking_on_registration(): void
+    {
+        $client = Client::create([
+            'name' => 'Existing Client Corp',
+            'email' => 'corp@example.com',
+        ]);
+
+        Livewire::test('register')
+            ->set('name', 'Client Contact')
+            ->set('email', 'corp@example.com')
+            ->set('password', 'password123')
+            ->set('password_confirmation', 'password123')
+            ->call('register');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'corp@example.com',
+            'role' => 'client',
+            'client_id' => $client->id,
+        ]);
+    }
+
+    public function test_client_role_cannot_access_restricted_routes(): void
+    {
+        $client = Client::create([
+            'name' => 'Restricted Client',
+            'email' => 'restricted@example.com',
+        ]);
+
+        $user = \App\Models\User::create([
+            'name' => 'Client User',
+            'email' => 'restricted@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'client',
+            'client_id' => $client->id,
+        ]);
+
+        $this->actingAs($user);
+
+        // Block clients page
+        $this->get('/clients')->assertStatus(403);
+
+        // Block settings page
+        $this->get('/settings')->assertStatus(403);
+
+        // Block activity feed page
+        $this->get('/activity')->assertStatus(403);
+    }
+
+    public function test_client_cannot_view_other_clients_invoices(): void
+    {
+        $clientA = Client::create(['name' => 'Client A', 'email' => 'a@example.com']);
+        $clientB = Client::create(['name' => 'Client B', 'email' => 'b@example.com']);
+
+        $userB = \App\Models\User::create([
+            'name' => 'User B',
+            'email' => 'b@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'client',
+            'client_id' => $clientB->id,
+        ]);
+
+        $invoiceA = Invoice::create([
+            'client_id' => $clientA->id,
+            'invoice_number' => 'INV-A-01',
+            'issue_date' => '2026-07-10',
+            'due_date' => '2026-08-10',
+            'status' => 'draft',
+            'total' => 100.00,
+        ]);
+
+        $invoiceB = Invoice::create([
+            'client_id' => $clientB->id,
+            'invoice_number' => 'INV-B-01',
+            'issue_date' => '2026-07-10',
+            'due_date' => '2026-08-10',
+            'status' => 'draft',
+            'total' => 200.00,
+        ]);
+
+        $this->actingAs($userB);
+
+        // Try viewing Client A's invoice -> Blocked!
+        $this->get("/invoices/{$invoiceA->id}")->assertStatus(403);
+
+        // View own invoice -> Allowed!
+        $this->get("/invoices/{$invoiceB->id}")->assertStatus(200);
+    }
 }

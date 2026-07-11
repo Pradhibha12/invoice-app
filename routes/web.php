@@ -9,7 +9,7 @@ Route::middleware('throttle:5,1')->group(function () {
 
 Route::livewire('/invoice/view/{token}', 'invoice-public')->name('invoices.public');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'client.guard'])->group(function () {
     Route::livewire('/', 'dashboard')->name('dashboard');
     Route::livewire('/settings', 'settings-form')->name('settings.edit');
     Route::livewire('/activity', 'activity-feed')->name('activity.index');
