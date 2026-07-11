@@ -29,6 +29,26 @@ class InvoiceAppTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
+    public function test_can_register_new_user(): void
+    {
+        auth()->logout();
+
+        Livewire::test('register')
+            ->set('name', 'New User')
+            ->set('email', 'newuser@example.com')
+            ->set('password', 'secret123')
+            ->set('password_confirmation', 'secret123')
+            ->call('register')
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertDatabaseHas('users', [
+            'name' => 'New User',
+            'email' => 'newuser@example.com',
+        ]);
+
+        $this->assertTrue(auth()->check());
+    }
+
     public function test_homepage_renders_dashboard(): void
     {
         $response = $this->get('/');

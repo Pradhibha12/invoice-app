@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::livewire('/login', 'login')->name('login')->middleware('guest');
+Route::livewire('/register', 'register')->name('register')->middleware('guest');
 
 Route::middleware('auth')->group(function () {
     Route::livewire('/', 'dashboard')->name('dashboard');
